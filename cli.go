@@ -18,7 +18,7 @@ func addToPathFront(dir string) (string, error) {
         return path, err
     }
 
-    path = strings.Join([]string {path, dir}, ":")
+    path = strings.Join([]string {dir, path}, ":")
     return path, nil
 }
 
@@ -33,7 +33,7 @@ func addToPathBack(dir string) (string, error) {
         return path, err
     }
 
-    path = strings.Join([]string {dir, path}, ":")
+    path = strings.Join([]string {path, dir}, ":")
     return path, nil
 }
 
@@ -45,6 +45,7 @@ func removeFromPath(dir string) (string, error) {
 
     pathEntries := strings.Split(path, ":")
     foundIdx := slices.Index(pathEntries, dir)
+
     updatedEntries := slices.Delete(pathEntries, foundIdx, foundIdx+1)
 
     newPath := strings.Join(updatedEntries, ":")
