@@ -1,163 +1,79 @@
 package main
 
+/**
+
 import (
-	"fmt"
-	"slices"
-	// "strconv"
-
-	"os"
-	"os/exec"
-	"strings"
-
-	"github.com/gdamore/tcell/v2"
+	"github.com/itsknob/hawk-tui/envpath"
+	"github.com/itsknob/hawk-tui/ui"
 	"github.com/rivo/tview"
 )
 
-func setupList(app *tview.Application) (*tview.TextView) {
-    list := tview.NewTextView()
-    list.SetBorder(true)
-    list.SetTitle("Current Path Entries")
-    list.SetInputCapture(func(event *tcell.EventKey) (*tcell.EventKey) {
-        switch event.Key() {
-            case tcell.KeyESC: {
-                focusList(app, list)
-                break;
-            }
-            default: {
-                break;
-            }
-        }
-        return event
-    })
-
-    // list.SetSelectedFunc(func(i int, s1, s2 string, r rune) {
-    //     *selected = s1
-    //     // fmt.Println("\n\nSelected updated to: ", *selected)
-    // })
-
-    return list
-}
-
-func focusList(app *tview.Application, list *tview.TextView) {
-    app.SetFocus(list)
-}
-
 func main() {
-    pathDirectories := getPathAsList()
-    slices.Sort(pathDirectories)
 
-    // Container with Builtins
-    app := tview.NewApplication()
+    state := ui.State{}
+	// Container with Builtins
+	root := tview.NewApplication()
 
-    // List of every item on the path
-    // Pass by reference
-    list := setupList(app)
+    // Get p from env and set up entries
+    // Path Controller
+    p := envpath.Path{}
+    p.Init() // get PATH from env
 
-    // Shows the currently selected option
-    selectedTextArea := tview.NewTextView().
-        SetDynamicColors(true).
-        SetRegions(true).
-        SetWordWrap(true)
+    state.Path = &p
 
-    // A function to clear and replace selected text
-    // refreshSelectedText := func(selected string) {
-    //     selectedTextArea.Clear()
-    //     // Print to the selectedTextArea directly
-    //     fmt.Fprintln(selectedTextArea, selected)
-    // }
+    // List of items in path
+    list := state.CreateList(root)
+    // Add entries from path to list
+    ui.AddDataToList(list, p.Entries)
 
-    /////////////////////
-    /// Add items to List
-    /////////////////////
-    // Add individual path items to list
-    for _, path := range []string(pathDirectories) {
-        // start runes at lowercase 'a' offset by idx
-        // ascii := strconv.Itoa(idx+97) // offset and convert to string
-        // r, _ := strconv.Atoi(ascii) // convert string back to int
+    // Fuzzy Find Menu
+    fuzzyFindMenu := state.CreateFuzzyFindMenu()
 
-        
-        fmt.Fprintln(list, path)
-        // list.AddItem(path, "", rune(r), func() {
-        //     selected := pathDirectories[list.GetCurrentItem()]
-        //     refreshSelectedText(selected)
-        // })
-    }
+    // Remove menus
+    // removeFromPath := state.CreateRemoveFromPathMenu(root, p)
 
-    // Add option to quit after list of path directories
-    // list.AddItem("Quit", "Press to exit", 'Q', func() {
-    //     fmt.Println("Selected Q, Stopping App")
-    //     app.Stop()
-    // })
+    // Add to Path Menus
+    addToPathFrontMenu := state.CreateAddToPathMenu(true)
+    addToPathBackMenu := state.CreateAddToPathMenu(false)
 
-    ///////////////
-    // Menu Form //
-    ///////////////
-    createMenu := func () (*tview.List) {
-        menu := tview.NewList()
-        menu.SetTitle("What would you like to do?")
-        menu.SetBorder(true)
+    // Main Menu 
+    mainMenu := state.CreateMainMenu(root, addToPathFrontMenu, addToPathBackMenu)
 
-        menu.
-        AddItem("Add item to PATH", "Add to start of PATH", 'a', func () {
-            fmt.Println("Selected (a) - Add item to PATH (start)")
-            app.Draw()
-        }).
-        AddItem("Add item to PATH", "Add to end of PATH", 'b', func () {
-            fmt.Println("Selected (b) - Add item to PATH (end)")
-        }).
-        AddItem("Remove item from PATH", "", 'c', func(){
-            fmt.Println("Selected (c) - Remove item from PATH")
-            app.SetFocus(list)
-        }).
-        AddItem("Search for item in PATH", "Fuzzy find in path", 'd', func(){
-            fmt.Println("Selected (d) - Search for item in PATH")
-            app.SetFocus(list)
-        }).
-        AddItem("Quit", "No further changes will be made", 'q', func(){
-            app.Stop()
-        })
-        return menu
-    }
+	// Container for List and Selected Text Area
+	pathFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(list, 0, 1, true)
 
-    mainMenu := createMenu()
-    ///////////////////////////
-    // Add Panes to Flex Layout
-    ///////////////////////////
-    // Container for List and Selected Text Area
-    pathFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-        AddItem(list, 0, 1, true).
-        AddItem(selectedTextArea, 0, 2, false)
+	// Container for Path Entries and Menus
+	entriesAndMainMenu := tview.NewFlex().
+		AddItem(pathFlex, 0, 1, false).
+		AddItem(mainMenu, 0, 1, true)
+
+    entriesAndAddFormFront := tview.NewFlex().
+        AddItem(pathFlex, 0, 1, false).
+        AddItem(addToPathFrontMenu, 0, 1, true)
+
+    entriesAndAddFormBack := tview.NewFlex().
+        AddItem(pathFlex, 0, 1, false).
+        AddItem(addToPathBackMenu, 0, 1, true)
+
+    entriesAndFuzzyFind := tview.NewFlex().
+        AddItem(pathFlex, 0, 1, false).
+        AddItem(fuzzyFindMenu, 0, 1, true)
 
 
-    // Container for Path Entries and Menus
-    flex := tview.NewFlex().
-        AddItem(pathFlex, 0, 2, false).
-        AddItem(mainMenu, 0, 1, true)
-        // AddItem(tview.NewBox().SetBorder(true).SetTitle(string(selected)), 0, 1, false).
+    pages := tview.NewPages()
+    pages.AddPage("Main Menu", entriesAndMainMenu, true, true)
+    pages.AddPage("Add to Path Front", entriesAndAddFormFront, true, false)
+    pages.AddPage("Add to Path Back", entriesAndAddFormBack, true, false)
+    pages.AddPage("Fuzzy Find", entriesAndFuzzyFind, true, false)
+    // pages.AddPage("Delete from Path", entriesAndDeleteForm, true, false)
+    state.Pages = pages
 
-    
-    // Render App, with Flex as Root, and Focus on List
-    if err := app.SetRoot(flex, true).SetFocus(mainMenu).Run(); err != nil {
-        panic(err)
-    }
+    state.Focused = root.GetFocus()
+
+	// Render App, with Flex as Root, and Focus on List
+	if err := root.SetRoot(pages, true).SetFocus(mainMenu).Run(); err != nil {
+		panic(err)
+	}
 }
-
-func getPathAsList() ([]string) {
-    pathString := getPath();
-    // Split path on ":"
-    pathList := strings.Split(pathString, ":")
-    return pathList
-}
-
-// Get $PATH as a string
-func getPath() (string) {
-    path := os.Getenv("PATH")
-    cmd := exec.Command("echo", path)
-    stdout, err := cmd.Output()
-
-    if err != nil {
-        panic(err)
-    }
-    return string(stdout)
-
-}
+**/
