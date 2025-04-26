@@ -33,7 +33,7 @@ func (p *Path) GetPathAsString() (string) {
 
 func (p *Path) AddToPathFront(dir string) (string, error) {
     // Check that new path is valid
-    println("Adding ", dir, " to front of PATH")
+    // println("Adding ", dir, " to front of PATH")
     _, err := os.Stat(dir)
     if err != nil {
         return p.GetPathAsString(), err

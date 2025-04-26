@@ -2,14 +2,12 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"os"
 	"slices"
 	"strings"
 
 	"github.com/rivo/tview"
-	// "github.com/sahilm/fuzzy"
+	"github.com/sahilm/fuzzy"
 )
 
 var (
@@ -23,6 +21,7 @@ var (
     fuzzyFindMenu *tview.Form
     appFlex *tview.Flex
     path []string
+    filteredPath []string
 )
 
 func main() {
@@ -42,11 +41,21 @@ func main() {
         SetTitle("Path").
         SetTitleAlign(tview.AlignLeft)
 
-    for idx, item := range strings.Split(os.Getenv("PATH"), ":") {
+
+    updateList := func(path []string) {
+        if path == nil {
+            path = strings.Split(os.Getenv("PATH"), ":")
+        }
+        for idx, item := range path {
             list.AddItem(item, "", int32(idx), func() {
                 selectedItem = &item
             })
+        }
     }
+
+    // Initialize global path
+    updateList(nil)
+    filteredPath = path // reference
 
     addStartMenu = tview.NewForm()
     addStartMenu.SetBorder(true).SetTitle("Add to Start").SetTitleAlign(tview.AlignLeft)
@@ -69,6 +78,10 @@ func main() {
     fuzzyFindMenu = tview.NewForm()
     fuzzyFindMenu.SetBorder(true).SetTitle("Search").SetTitleAlign(tview.AlignLeft)
     fuzzyFindMenu.AddInputField("Input", "", 0, nil, nil)
+    fuzzyFindInput := fuzzyFindMenu.GetFormItemByLabel("Input").(*tview.InputField)
+    fuzzyFindInput.SetChangedFunc(func(text string) {
+        fuzzy.Find(text, filteredPath)
+    })
     fuzzyFindMenu.AddButton(
     	"Add to Path",
     	func() {
@@ -82,9 +95,10 @@ func main() {
                     SetText(err.Error()).
                     SetBorder(true).SetTitle("Error"))
                 }
-        println(path)
-    },
-    )
+        // println(path)
+        updateList(path)
+    })
+
     fuzzyFindMenu.AddButton("Remove from Path", func() {
         input := fuzzyFindMenu.GetFormItemByLabel("Input").(*tview.InputField)
         text := input.GetText()
@@ -92,8 +106,10 @@ func main() {
         if err != nil {
             panic(err)
         }
-        println(path)
+        // println(path)
+        updateList(path)
     })
+
     fuzzyFindMenu.AddButton("Quit", func() {
         app.Stop()
     })
@@ -116,7 +132,7 @@ func AddToPathBack(dir string) ([]string, error) {
     path = append(path, dir)
     err = os.Setenv("PATH", GetPathAsString())
     if err != nil {
-        println(err)
+        // println(err)
         return path, err
     }
 
@@ -126,7 +142,7 @@ func AddToPathBack(dir string) ([]string, error) {
 func RemoveFromPath(dir string) ([]string, error) {
     foundIdx := slices.Index(path, dir)
     if foundIdx+1 >= len(path) {
-        log.Default().Output(1, fmt.Sprintf("foundIdx+1 out of bounds - foundIdx+1: %d, len(path): %d", foundIdx+1, len(path)))
+        // log.Default().Output(1, fmt.Sprintf("foundIdx+1 out of bounds - foundIdx+1: %d, len(path): %d", foundIdx+1, len(path)))
         return path, errors.New("Out of bound during delete")
     }
     path = slices.Delete(path, foundIdx, foundIdx+1)

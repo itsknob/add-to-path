@@ -49,9 +49,9 @@ func (state *State) CreateList(root *tview.Application) (*tview.TextView){
 }
 
 func AddDataToList(l *tview.TextView, data []string) {
-    // for each entry, print to TextView
+    for each entry, print to TextView
 	for _, path := range []string(data) {
-		fmt.Fprintln(l, path)
+		// fmt.Fprintln(l, path)
 	}
 }
 
@@ -63,11 +63,11 @@ func (state *State) CreateMainMenu(root *tview.Application, addToPathFrontMenu *
     AddItem("Add item to PATH", "Start of Path: $PATH=/new/dir:$PATH", 'a', state.showAddToPathFrontMenu).
     AddItem("Add item to PATH", "End of Path: $PATH=$PATH:/new/dir", 'b', state.showAddToPathBackMenu).
     AddItem("Remove item from PATH", "", 'c', func() {
-        println("Selected (c) - Remove item from PATH")
+        // println("Selected (c) - Remove item from PATH")
         // main.SetFocus(list.View)
     }).
     AddItem("Search for item in PATH", "Fuzzy Find", 'd', func() {
-        println("Selected (d) - Search for item in PATH")
+        // println("Selected (d) - Search for item in PATH")
         state.Pages.SwitchToPage("Fuzzy Find")
         // root.SetFocus(list.View)
     }).
@@ -88,24 +88,24 @@ func (state *State) CreateAddToPathMenu(addToFront bool) (*tview.Form) {
     inputField := menu.GetFormItemByLabel("Directory").(*tview.InputField)
     inputField.SetDoneFunc(func (key tcell.Key) {
 
-        println("KEY", key)
+        // println("KEY", key)
         switch key {
             case tcell.KeyEnter: {
                 if (addToFront) {
                     path, err := state.Path.AddToPathFront(inputField.GetText())
                     if err != nil {
-                        println(err.Error())
+                        // println(err.Error())
                         // popup? maybe a warning message somehwhere somehow?
                         // modal.SetText(err.Error())
                         // state.Root.SetRoot(modal, false).SetFocus(modal)
                     }
-                    println("Updated PATH=", path)
+                    // println("Updated PATH=", path)
                 } else {
                     path, _ := state.Path.AddToPathBack(inputField.GetText())
                     // if err != nil {
                     //     panic(err)
                     // }
-                    println("Updated PATH=", path)
+                    // println("Updated PATH=", path)
                 }
             }
         }
@@ -153,7 +153,7 @@ func (state *State) CreateFuzzyFindMenu() (*tview.Form) {
             }
             case tcell.KeyEnter: {
                 // TODO: Copy to clipboard?
-                println("Found:", in.GetText())
+                // println("Found:", in.GetText())
                 break;
             }
             default: {
@@ -193,7 +193,7 @@ func (state *State) CreateRemoveFromPathMenu() (*tview.Form) {
             }
             case tcell.KeyEnter: {
                 // TODO: Copy to clipboard?
-                println("Found:", in.GetText())
+                // println("Found:", in.GetText())
                 state.Path.RemoveFromPath(in.GetText())
                 break;
             }
