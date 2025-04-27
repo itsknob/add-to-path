@@ -1,10 +1,8 @@
 package ui
 
 import (
-	"fmt"
-
 	"github.com/gdamore/tcell/v2"
-	"github.com/itsknob/hawk-tui/envpath"
+	"github.com/itsknob/hawk-tui/model"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
 )
@@ -12,8 +10,143 @@ import (
 type State struct {
     Root *tview.Application
     Pages *tview.Pages
-    Path *envpath.Path
-    Focused tview.Primitive
+    Focused *tview.Primitive
+    List *tview.List
+}
+
+func New() (*State) {
+    app := tview.NewApplication()
+    pages := tview.NewPages()
+
+    list := tview.NewList().ShowSecondaryText(false).SetHighlightFullLine(true)
+    list.SetBorder(true).SetTitle("Path").SetTitleAlign(tview.AlignLeft)
+
+    state := &State{
+        Root: app,
+        Pages: pages,
+        Focused: nil,
+        List: list,
+    }
+
+    return state
+}
+
+func createAddToStartMenu() (*tview.Form) {
+    ////////////////////
+    // Add To Start Menu
+    addStartMenu := tview.NewForm()
+    addStartMenu.SetBorder(true).SetTitle("Add to Start").SetTitleAlign(tview.AlignLeft)
+    addStartMenu.AddInputField("Dir", "", 0, nil, nil)
+    // addStartMenu.AddButton("Back", func() {
+    //     app.SetRoot(flex, true).SetFocus(fuzzyFindMenu)
+    //     app.Draw()
+    // })
+    
+    return addStartMenu
+}
+
+func createAddToEndMenu() (*tview.Form) {
+    ////////////////////
+    // Add To End Menu
+    addEndMenu := tview.NewForm()
+    addEndMenu.SetBorder(true).SetTitle("Add to End").SetTitleAlign(tview.AlignLeft)
+    addEndMenu.AddInputField("Dir", "", 0, nil, nil)
+    // addEndMenu.AddButton("Back", func() {
+    //     app.SetRoot(flex, true).SetFocus(fuzzyFindMenu)
+    //     app.Draw()
+    // })
+
+    return addEndMenu
+}
+
+func createRemoveMenu() (*tview.Form) {
+    ////////////////////
+    // Remove Entry Menu
+    removeMenu := tview.NewForm()
+
+    return removeMenu
+}
+
+func createFuzzyFindMenu(app *tview.Application) (*tview.Form) {
+    ////////////////////
+    // Fuzzy Find Menu
+    fuzzyFindMenu := tview.NewForm()
+    fuzzyFindMenu.SetBorder(true).SetTitle("Search").SetTitleAlign(tview.AlignLeft)
+    fuzzyFindMenu.AddInputField("Input", "", 0, nil, nil)
+    // fuzzyFindMenu.AddButton(
+    // 	"Add to Path",
+    // 	func() {
+    //     input := fuzzyFindMenu.GetFormItemByLabel("Input").(*tview.InputField)
+    //     text := input.GetText()
+    //     path, err := AddToPathBack(text)
+    //     if err != nil {
+    //         app.SetFocus(
+    //             tview.NewModal().
+    //                 AddButtons([]string{"OK"}).
+    //                 SetText(err.Error()).
+    //                 SetBorder(true).SetTitle("Error"))
+    //             }
+    //     println(path)
+    // })
+
+    // fuzzyFindMenu.AddButton("Remove from Path", func() {
+    //     input := fuzzyFindMenu.GetFormItemByLabel("Input").(*tview.InputField)
+    //     text := input.GetText()
+    //     path, err := RemoveFromPath(text)
+    //     if err != nil {
+    //         panic(err)
+    //     }
+    //     println(path)
+    // })
+
+    // fuzzyFindMenu.AddButton("Quit", func() {
+    //     app.Stop()
+    // })
+
+    return fuzzyFindMenu
+}
+
+func (state *State) Start(path *model.Path) {
+    // Initialize Path List
+    state.AddDataToList(path.Entries)
+
+    // Create Menu Forms
+    fuzzyFindMenu := createFuzzyFindMenu(state.Root)
+    addToStartMenu := createAddToStartMenu()
+    addToEndMenu := createAddToEndMenu()
+    removeFromPathMenu := createRemoveMenu()
+
+    //////////////////////
+    // Main Flex Container
+    mainMenuContainer := tview.NewFlex().SetDirection(tview.FlexRow)
+    mainMenuContainer.SetBorder(true).SetTitle("Hawk Tui")
+    mainMenuContainer.AddItem(state.List, 0, 3, false)
+    mainMenuContainer.AddItem(fuzzyFindMenu, 0, 1, true)
+    // Main Menu Page
+    state.Pages = state.Pages.AddAndSwitchToPage("Main Menu", mainMenuContainer, true)
+
+
+    addToStartContainer := tview.NewFlex().SetDirection(tview.FlexRow)
+    addToStartContainer.SetBorder(true).SetTitle("Hawk Tui")
+    addToStartContainer.AddItem(state.List, 0, 3, false)
+    addToStartContainer.AddItem(addToStartMenu, 0, 1, true)
+    state.Pages = state.Pages.AddPage("Add to Path Front", addToStartContainer, true, false)
+
+    addToEndContainer := tview.NewFlex().SetDirection(tview.FlexRow)
+    addToEndContainer.SetBorder(true).SetTitle("Hawk Tui")
+    addToEndContainer.AddItem(state.List, 0, 3, false)
+    addToEndContainer.AddItem(addToEndMenu, 0, 1, true)
+    state.Pages = state.Pages.AddPage("Add to Path Back", addToEndContainer, true, false)
+
+    removeFromPathContainer := tview.NewFlex().SetDirection(tview.FlexRow)
+    removeFromPathContainer.SetBorder(true).SetTitle("Hawk Tui")
+    removeFromPathContainer.AddItem(state.List, 0, 3, false)
+    removeFromPathContainer.AddItem(removeFromPathMenu, 0, 1, true)
+    state.Pages = state.Pages.AddPage("Remove From Path", removeFromPathContainer, true, false)
+
+    if err := state.Root.SetRoot(mainMenuContainer, true).SetFocus(fuzzyFindMenu).Run(); err != nil {
+        panic(err)
+    }
 }
 
 func (state *State) showMainMenu() {
@@ -26,32 +159,14 @@ func (state *State) showAddToPathFrontMenu() {
 func (state *State) showAddToPathBackMenu() {
     state.Pages.SwitchToPage("Add to Path Back")
 }
-
-func (state *State) CreateList(root *tview.Application) (*tview.TextView){
-    l := tview.NewTextView()
-	l.SetBorder(true)
-	l.SetTitle("Current Path Entries")
-	l.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyESC:
-			{
-				state.showMainMenu()
-				break
-			}
-		default:
-			{
-				break
-			}
-		}
-		return event
-	})
-    return l
+func (state *State) showRemoveFromPathMenu() {
+    state.Pages.SwitchToPage("Remove From Path")
 }
 
-func AddDataToList(l *tview.TextView, data []string) {
-    for each entry, print to TextView
-	for _, path := range []string(data) {
-		// fmt.Fprintln(l, path)
+func (state *State) AddDataToList(data []string) {
+    // for each entry, print to TextView
+	for idx, path := range []string(data) {
+        state.List.AddItem(path, "", int32(idx+95), nil)
 	}
 }
 
@@ -78,7 +193,7 @@ func (state *State) CreateMainMenu(root *tview.Application, addToPathFrontMenu *
     return main
 }
 
-func (state *State) CreateAddToPathMenu(addToFront bool) (*tview.Form) {
+func (state *State) CreateAddToPathMenu(pc *controller.PathController, addToFront bool) (*tview.Form) {
     menu := tview.NewForm()
     menu.SetTitle("Add to Path, e.g. /usr/bin/local")
     menu.SetBorder(true)
@@ -92,7 +207,7 @@ func (state *State) CreateAddToPathMenu(addToFront bool) (*tview.Form) {
         switch key {
             case tcell.KeyEnter: {
                 if (addToFront) {
-                    path, err := state.Path.AddToPathFront(inputField.GetText())
+                    path, err := pc.Path.AddToPathFront(inputField.GetText())
                     if err != nil {
                         // println(err.Error())
                         // popup? maybe a warning message somehwhere somehow?
@@ -101,7 +216,7 @@ func (state *State) CreateAddToPathMenu(addToFront bool) (*tview.Form) {
                     }
                     // println("Updated PATH=", path)
                 } else {
-                    path, _ := state.Path.AddToPathBack(inputField.GetText())
+                    path, _ := pc.Path.AddToPathFront(inputField.GetText())
                     // if err != nil {
                     //     panic(err)
                     // }
@@ -123,7 +238,7 @@ func (state *State) CreateAddToPathMenu(addToFront bool) (*tview.Form) {
     })
 
     inputField.SetAutocompleteFunc(func (currentText string) (entries []string) {
-            matches := fuzzy.Find(inputField.GetText(), state.Path.Entries)
+            matches := fuzzy.Find(inputField.GetText(), pc.Path.Entries)
             entries = []string{}
             for _, match := range matches {
                 entries = append(entries, match.Str)
@@ -137,7 +252,7 @@ func (state *State) CreateAddToPathMenu(addToFront bool) (*tview.Form) {
     return menu
 }
 
-func (state *State) CreateFuzzyFindMenu() (*tview.Form) {
+func (state *State) CreateFuzzyFindMenu(pathItems []string) (*tview.Form) {
     menu := *tview.NewForm()
     menu.SetTitle("Fuzzy Find").SetBorder(true)
     menu.AddInputField("Search", "", 0, nil, nil)
@@ -165,7 +280,7 @@ func (state *State) CreateFuzzyFindMenu() (*tview.Form) {
 
     })
     in.SetAutocompleteFunc(func (currentText string) (entries []string) {
-            matches := fuzzy.Find(in.GetText(), state.Path.Entries)
+            matches := fuzzy.Find(in.GetText(), pathItems)
             entries = []string{}
             for _, match := range matches {
                 entries = append(entries, match.Str)
@@ -178,7 +293,7 @@ func (state *State) CreateFuzzyFindMenu() (*tview.Form) {
     
 }
 
-func (state *State) CreateRemoveFromPathMenu() (*tview.Form) {
+func (state *State) CreateRemoveFromPathMenu(pc *controller.PathController, pathItems []string) (*tview.Form) {
     menu := *tview.NewForm()
     menu.SetTitle("Remove from Path").SetBorder(true)
     menu.AddInputField("Directory", "", 0, nil, nil)
@@ -193,8 +308,9 @@ func (state *State) CreateRemoveFromPathMenu() (*tview.Form) {
             }
             case tcell.KeyEnter: {
                 // TODO: Copy to clipboard?
-                // println("Found:", in.GetText())
-                state.Path.RemoveFromPath(in.GetText())
+                println("Found:", in.GetText())
+                pc.Path.RemoveFromPath(in.GetText())
+                state.showMainMenu()
                 break;
             }
             default: {
