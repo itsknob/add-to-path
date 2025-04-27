@@ -1,4 +1,4 @@
-package main
+package main2
 
 /**
 
@@ -36,7 +36,7 @@ func main() {
     addToPathFrontMenu := state.CreateAddToPathMenu(true)
     addToPathBackMenu := state.CreateAddToPathMenu(false)
 
-    // Main Menu 
+    // Main Menu
     mainMenu := state.CreateMainMenu(root, addToPathFrontMenu, addToPathBackMenu)
 
 	// Container for List and Selected Text Area
