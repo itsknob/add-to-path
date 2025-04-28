@@ -52,6 +52,10 @@ func main() {
 			switchToForm(app, form)
 		})
 	}
+    list.AddItem("Quit", "Save changes to PATH", 'Q', func() {
+        app.Stop()
+    })
+    
 
 	form = tview.NewForm().
 		AddInputField("Directory", "", 0, nil, nil)
