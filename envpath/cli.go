@@ -19,7 +19,6 @@ func (p *Path) Init() {
 
     // split
     entries := strings.Split(path, ":")
-
     // sort
     slices.Sort(entries)
     // save
@@ -31,35 +30,35 @@ func (p *Path) GetPathAsString() (string) {
     return strings.Join(p.Entries, ":")
 }
 
-func (p *Path) AddToPathFront(dir string) (string, error) {
+func (p *Path) AddToPathFront(dir string) (error) {
     // Check that new path is valid
     // println("Adding ", dir, " to front of PATH")
     _, err := os.Stat(dir)
     if err != nil {
-        return p.GetPathAsString(), err
+        return err
     }
 
     p.Entries = append([]string{dir}, p.Entries...)
     
-    return p.GetPathAsString(), nil
+    return nil
 }
 
-func (p *Path) AddToPathBack(dir string) (string, error) {
+func (p *Path) AddToPathBack(dir string) (error) {
     _, err := os.Stat(dir)
     if err != nil {
-        return p.GetPathAsString(), err
+        return err
     }
 
     p.Entries = append(p.Entries, dir)
 
-    return p.GetPathAsString(), nil
+    return nil
 }
 
-func (p *Path) RemoveFromPath(dir string) (string, error) {
+func (p *Path) RemoveFromPath(dir string) (error) {
     foundIdx := slices.Index(p.Entries, dir)
     p.Entries = slices.Delete(p.Entries, foundIdx, foundIdx+1)
 
-    return p.GetPathAsString(), nil 
+    return nil 
 }
 
 func (p *Path) UpdateZProfile() {}

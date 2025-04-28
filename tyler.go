@@ -6,38 +6,38 @@ import (
 	"github.com/rivo/tview"
 )
 
-func onSubmit(form *tview.Form, inputLabel string) string {
-	inputFormItem := form.GetFormItemByLabel(inputLabel).(*tview.InputField)
-	return inputFormItem.GetText()
-}
-
-func refreshList(list *tview.List, entries []string) {
-	list.Clear()
-
-	for idx, item := range entries {
-		list.AddItem(item, "", int32(idx+97), nil)
-	}
-}
-
-func switchToForm(app *tview.Application, newFocus *tview.Form) {
-	// todo will explode
-	app.SetFocus(newFocus)
-}
-func switchToList(app *tview.Application, newFocus *tview.List) {
-	app.SetFocus(newFocus)
-}
-func setDirText(selectedText string) {
-	formInput := form.GetFormItemByLabel("Directory").(*tview.InputField)
-	formInput.SetText(selectedText)
-}
-
+// func onSubmit(form *tview.Form, inputLabel string) string {
+// 	inputFormItem := form.GetFormItemByLabel(inputLabel).(*tview.InputField)
+// 	return inputFormItem.GetText()
+// }
+//
+// func refreshList(list *tview.List, entries []string) {
+// 	list.Clear()
+//
+// 	for idx, item := range entries {
+// 		list.AddItem(item, "", int32(idx+97), nil)
+// 	}
+// }
+//
+// func switchToForm(app *tview.Application, newFocus *tview.Form) {
+// 	// todo will explode
+// 	app.SetFocus(newFocus)
+// }
+// func switchToList(app *tview.Application, newFocus *tview.List) {
+// 	app.SetFocus(newFocus)
+// }
+// func setDirText(selectedText string) {
+// 	formInput := form.GetFormItemByLabel("Directory").(*tview.InputField)
+// 	formInput.SetText(selectedText)
+// }
+//
 var (
 	app  *tview.Application
 	form *tview.Form
 	list *tview.List
 )
 
-func main() {
+func main2() {
 	app = tview.NewApplication()
 	pathObject := envpath.Path{}
 	pathObject.Init()
@@ -67,24 +67,21 @@ func main() {
 		}).
 		AddButton("Add to Front", func() {
 			value := form.GetFormItemByLabel("Directory").(*tview.InputField).GetText()
-			_, err := pathObject.AddToPathFront(value)
-			if err != nil {
+			if err := pathObject.AddToPathFront(value); err != nil {
 				panic(err)
 			}
 			refreshList(list, pathObject.Entries)
 		}).
 		AddButton("Add to Back", func() {
 			value := form.GetFormItemByLabel("Directory").(*tview.InputField).GetText()
-			_, err := pathObject.AddToPathBack(value)
-			if err != nil {
+			if err := pathObject.AddToPathBack(value); err != nil {
 				panic(err)
 			}
 			refreshList(list, pathObject.Entries)
 		}).
 		AddButton("Remove from Path", func() {
 			value := form.GetFormItemByLabel("Directory").(*tview.InputField).GetText()
-			_, err := pathObject.RemoveFromPath(value)
-			if err != nil {
+			if err := pathObject.RemoveFromPath(value); err != nil {
 				panic(err)
 			}
 			refreshList(list, pathObject.Entries)
